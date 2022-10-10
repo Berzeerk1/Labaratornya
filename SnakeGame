@@ -10,21 +10,53 @@ namespace SnakeGame
         static readonly int x = 80;
         static readonly int y = 26;
 
-        static Walls walls;
+        static Barrier Barrier;
         static Snake snake;
-        
+        static FoodRespawn FoodRespawn;
+        static Timer time;
+
         static void Main()
         {
             Console.SetWindowSize(x + 1, y + 1);
             Console.SetBufferSize(x + 1, y + 1);
             Console.CursorVisible = false;
 
-            walls = new Walls(x, y, '#');
+            Barrier = new Barrier(x, y, '#');
             snake = new Snake(x / 2, y / 2, 3);
+
+            FoodRespawn = new FoodRespawn(x, y, '@');
+            FoodRespawn.CreateFood();
+
+            time = new Timer(Loop, null, 0, 200);
+
+            while (true)
+            {
+                if (Console.KeyAvailable)
+                {
+                    ConsoleKeyInfo key = Console.ReadKey();
+                    snake.Rotation(key.Key);
+                }
+            }
+        }
+
+        static void Loop(object obj)
+        {
+            if (Barrier.IsHit(snake.GetHead()) || snake.IsHit(snake.GetHead()))
+            {
+                time.Change(0, Timeout.Infinite);
+            }
+            else if (snake.Eat(FoodRespawn.food))
+            {
+                FoodRespawn.CreateFood();
+            }
+            else
+            {
+                snake.Move();
+            }
         }
     }
-}
-struct Point
+
+    struct Point
     {
         public int x { get; set; }
         public int y { get; set; }
@@ -53,14 +85,13 @@ struct Point
             Console.Write(_ch);
         }
     }
-            
-            
-   class Walls
+
+    class Barrier
     {
         private char ch;
         private List<Point> wall = new List<Point>();
 
-        public Walls(int x, int y, char ch)
+        public Barrier(int x, int y, char ch)
         {
             this.ch = ch;
 
@@ -101,8 +132,8 @@ struct Point
             }
             return false;
         }
-    }
-    
+    } 
+
     enum Direction
     {
         LEFT,
@@ -110,6 +141,7 @@ struct Point
         UP,
         DOWN
     }
+
     class Snake
     {
         private List<Point> snake;
@@ -150,6 +182,7 @@ struct Point
 
             rotate = true;
         }
+
         public bool Eat(Point p)
         {
             head = GetNextPoint();
@@ -222,3 +255,27 @@ struct Point
             return false;
         }
     }
+
+    class FoodRespawn
+    {
+        int x;
+        int y;
+        char ch;
+        public Point food { get; private set; }
+
+        Random random = new Random();
+
+        public FoodRespawn(int x, int y, char ch)
+        {
+            this.x = x;
+            this.y = y;
+            this.ch = ch;
+        }
+
+        public void CreateFood()
+        {
+            food = (random.Next(2, x - 2), random.Next(2, y - 2), ch);
+            food.Draw();
+        }
+    }
+}
